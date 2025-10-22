@@ -1,7 +1,8 @@
 // === CONFIGURAÇÃO ===
 // ⚠️ Substitua pela sua chave de API do Gemini (use só localmente!)
+// === CONFIGURAÇÃO ===
 const API_KEY = "AIzaSyD70vjv7P3FjW6NdHrv2unxtAFmhvAWQz0";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
 
 const speakBtn = document.getElementById("speakBtn");
 const statusEl = document.getElementById("status");
