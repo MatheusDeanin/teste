@@ -16,6 +16,9 @@ let muted = false;
 // Histórico de mensagens
 let mensagens = JSON.parse(localStorage.getItem("mensagensJarvis")) || [];
 
+// Flag para primeira interação
+let primeiraInteracao = true;
+
 // Renderiza mensagens no container #conversa
 function renderizarChat() {
   conversaEl.innerHTML = "";
@@ -100,6 +103,12 @@ async function conversar(pergunta) {
 
 // === BOTÃO FALAR ===
 speakBtn.addEventListener("click", async () => {
+  // Primeira interação: fala de boas-vindas
+  if (primeiraInteracao) {
+    falar("Olá, sistemas Jarvis prontos para operação.");
+    primeiraInteracao = false;
+  }
+
   const pergunta = await ouvir();
   if (!pergunta) {
     statusEl.textContent = "❌ Não entendi, tente novamente.";
@@ -114,6 +123,3 @@ muteBtn.addEventListener("click", () => {
   muted = !muted;
   muteBtn.textContent = muted ? "🔊" : "🔇";
 });
-
-// === BOAS-VINDAS ===
-window.onload = () => falar("Olá, sistemas Jarvis prontos para operação.");
