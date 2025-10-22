@@ -6,7 +6,7 @@ document.getElementById("speakBtn").addEventListener("click", async () => {
     respostaEl.textContent = "Pensando...";
 
     try {
-        const resposta = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=SUA_API_KEY_AQUI", {
+        const resposta = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyD70vjv7P3FjW6NdHrv2unxtAFmhvAWQz0", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
