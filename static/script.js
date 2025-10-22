@@ -1,114 +1,119 @@
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-    // === CONFIGURE AQUI (somente para testes locais!) ===
-    const GEMINI_API_KEY = "AIzaSyBwOTOgB9He1Xnbc-ONfQk5yhXAJr6ebQY";
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    // =====================================================
+// === CONFIGURAÇÃO ===
+const GEMINI_API_KEY = "SUA_CHAVE_AQUI"; // Substitua pela sua chave real
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const chatEl = document.getElementById("chat");
-    const input = document.getElementById("pergunta");
-    const btnEnviar = document.getElementById("enviar");
-    const btnLimpar = document.getElementById("limpar");
+// Elementos
+const statusEl = document.getElementById("status");
+const conversaEl = document.getElementById("conversa");
+const speakBtn = document.getElementById("speakBtn");
+const muteBtn = document.getElementById("muteBtn");
 
-    // system prompt: comando que define o estilo/voz do modelo
-    const systemPrompt = { role: "system", content: "Fala como se você fosse um soldado indo para a segunda guerra mundial. Responda em estilo direto — sem explicações extras." };
+let muted = false;
 
-    // mensagens: histórico persistido em localStorage
-    let mensagens = JSON.parse(localStorage.getItem("mensagens")) || [];
+// Histórico de mensagens
+let mensagens = JSON.parse(localStorage.getItem("mensagensJarvis")) || [];
 
-    // renderiza a lista de mensagens no chat
-    function renderChat() {
-      chatEl.innerHTML = ""; // limpa
-      if (mensagens.length === 0) {
-        const info = document.createElement("div");
-        info.textContent = "Nenhuma mensagem ainda. Faça uma pergunta.";
-        info.style.opacity = ".7";
-        chatEl.appendChild(info);
-        return;
-      }
+// Renderiza mensagens no container #conversa
+function renderizarChat() {
+  conversaEl.innerHTML = "";
+  if (mensagens.length === 0) {
+    const info = document.createElement("div");
+    info.textContent = "Nenhuma mensagem ainda. Clique em 'Falar com Jarvis'.";
+    info.style.opacity = ".7";
+    conversaEl.appendChild(info);
+    return;
+  }
 
-      for (const m of mensagens) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "msg " + (m.role === "user" ? "user" : "gemini");
+  for (const msg of mensagens) {
+    const div = document.createElement("div");
+    div.className = msg.role === "user" ? "msg user" : "msg jarvis";
 
-        // meta linha (quem e hora opcional)
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        meta.textContent = m.role === "user" ? "Você" : "Gemini";
-        wrapper.appendChild(meta);
+    const html = marked.parse(msg.content || "");
+    const safe = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+    div.innerHTML = `<strong>${msg.role === "user" ? "Você" : "Jarvis"}:</strong><div>${safe}</div>`;
+    conversaEl.appendChild(div);
+  }
+  conversaEl.scrollTop = conversaEl.scrollHeight;
+}
 
-        // content: aqui vamos converter Markdown -> HTML e SANITIZAR antes de inserir
-        const content = document.createElement("div");
-        content.className = "content";
+renderizarChat();
 
-        // se já estivermos guardando conteúdo em markdown, convertemos:
-        // marked.parse transforma Markdown em HTML
-        const html = marked.parse(m.content || "");
-        // DOMPurify.sanitize remove scripts e atributos perigosos
-        const safe = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+// === VOZ DO JARVIS ===
+function falar(texto) {
+  if (muted) return;
+  const fala = new SpeechSynthesisUtterance(texto);
+  fala.lang = "pt-BR";
+  fala.pitch = 1.0;
+  fala.rate = 1.05;
+  fala.voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("pt")) || null;
+  speechSynthesis.speak(fala);
+}
 
-        content.innerHTML = safe;
-        wrapper.appendChild(content);
+// === RECONHECIMENTO DE VOZ ===
+async function ouvir() {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "pt-BR";
+  recognition.start();
+  statusEl.textContent = "🎙️ Ouvindo...";
 
-        chatEl.appendChild(wrapper);
-      }
+  return new Promise(resolve => {
+    recognition.onresult = (e) => resolve(e.results[0][0].transcript);
+    recognition.onerror = () => resolve(null);
+    setTimeout(() => {
+      recognition.stop();
+      resolve(null);
+    }, 7000);
+  });
+}
 
-      // rolar para baixo
-      chatEl.scrollTop = chatEl.scrollHeight;
-    }
+// === CONVERSAR COM O GEMINI ===
+async function conversar(pergunta) {
+  mensagens.push({ role: "user", content: pergunta });
+  localStorage.setItem("mensagensJarvis", JSON.stringify(mensagens));
+  renderizarChat();
 
-    renderChat();
+  statusEl.textContent = "🤔 Processando...";
 
-    // função que envia o contexto + system prompt ao Gemini
-    async function conversar(pergunta) {
-      mensagens.push({ role: "user", content: pergunta });
-      localStorage.setItem("mensagens", JSON.stringify(mensagens));
-      renderChat();
+  try {
+    const contexto = mensagens.map(m => `${m.role}: ${m.content}`).join("\n\n");
+    const result = await model.generateContent(contexto);
+    const resposta = await result.response.text();
 
-      // montar contexto: systemPrompt + histórico (apenas role:content text)
-      const contexto = [systemPrompt, ...mensagens].map(m => `${m.role}: ${m.content}`).join("\n\n");
+    mensagens.push({ role: "jarvis", content: resposta });
+    localStorage.setItem("mensagensJarvis", JSON.stringify(mensagens));
+    renderizarChat();
 
-      // pega o modelo (troque caso precise)
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    statusEl.textContent = "🤖 Jarvis: " + resposta;
+    falar(resposta);
 
-      // chamada
-      const result = await model.generateContent(contexto);
-      const resposta = await result.response.text();
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = "❌ Erro de comunicação com o sistema.";
+    mensagens.push({ role: "jarvis", content: "Erro de comunicação com o sistema." });
+    localStorage.setItem("mensagensJarvis", JSON.stringify(mensagens));
+    renderizarChat();
+  }
+}
 
-      // empilha a resposta (assumimos que o modelo já retornou em Markdown)
-      mensagens.push({ role: "model", content: resposta });
-      localStorage.setItem("mensagens", JSON.stringify(mensagens));
-      renderChat();
-    }
+// === BOTÃO FALAR ===
+speakBtn.addEventListener("click", async () => {
+  const pergunta = await ouvir();
+  if (!pergunta) {
+    statusEl.textContent = "❌ Não entendi, tente novamente.";
+    return;
+  }
+  statusEl.textContent = "💬 Você: " + pergunta;
+  await conversar(pergunta);
+});
 
-    btnEnviar.addEventListener("click", async () => {
-      const pergunta = input.value.trim();
-      if (!pergunta) return;
-      input.value = "";
-      btnEnviar.disabled = true;
-      btnEnviar.textContent = "Enviando...";
-      try {
-        await conversar(pergunta);
-      } catch (err) {
-        mensagens.push({ role: "model", content: `❌ Erro: ${err.message}` });
-        localStorage.setItem("mensagens", JSON.stringify(mensagens));
-        renderChat();
-        console.error(err);
-      } finally {
-        btnEnviar.disabled = false;
-        btnEnviar.textContent = "Enviar";
-      }
-    });
+// === MUTE ===
+muteBtn.addEventListener("click", () => {
+  muted = !muted;
+  muteBtn.textContent = muted ? "🔊" : "🔇";
+});
 
-    btnLimpar.addEventListener("click", () => {
-      mensagens = [];
-      localStorage.removeItem("mensagens");
-      renderChat();
-    });
-
-    // Enter para enviar
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        btnEnviar.click();
-      }
-    });
+// === BOAS-VINDAS ===
+window.onload = () => falar("Olá, sistemas Jarvis prontos para operação.");
