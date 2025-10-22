@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+body {
+    background-color: #010a1b;
+    color: #00ffff;
+    font-family: 'Orbitron', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* ====== TELA INICIAL ====== */
+.intro-container {
+    text-align: center;
+    animation: fadeIn 2s ease-in-out;
+}
+.intro h1 {
+    font-size: 2.8em;
+    margin-top: 50px;
+}
+.intro p {
+    font-size: 1.2em;
+    color: #00bcd4;
+}
+.logo-jarvis {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 3px solid #00ffff;
+    box-shadow: 0 0 20px #00ffff;
+    animation: pulse 3s infinite;
+}
+
+/* ====== BOTÕES ====== */
+.btn-neon {
+    background: none;
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    padding: 12px 25px;
+    font-size: 1em;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 25px;
+    transition: 0.3s;
+    text-shadow: 0 0 8px #00ffff;
+}
+.btn-neon:hover {
+    background-color: #00ffff;
+    color: #000;
+    box-shadow: 0 0 25px #00ffff, 0 0 50px #00ffff;
+}
+
+/* ====== CONSOLE ====== */
+.neon-title {
+    text-align: center;
+    margin-top: 40px;
+    text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
+}
+#jarvis-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 50px;
+}
+#ironman-3d video {
+    width: 280px;
+    border-radius: 12px;
+    box-shadow: 0 0 30px #00ffff;
+    transform-style: preserve-3d;
+}
+#status {
+    margin-top: 30px;
+    font-size: 1.2em;
+    color: #00bcd4;
+}
+#conversa {
+    margin-top: 20px;
+    width: 80%;
+    max-width: 500px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid #00ffff;
+    border-radius: 10px;
+    padding: 10px;
+    height: 200px;
+    overflow-y: auto;
+    box-shadow: inset 0 0 20px #00ffff;
+}
+
+/* ====== BOTÕES SUPERIORES ====== */
+#voltar, .mute-btn {
+    position: fixed;
+    top: 20px;
+    background: none;
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    padding: 8px 15px;
+    font-size: 0.9em;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+#voltar { right: 20px; }
+.mute-btn { left: 20px; }
+#voltar:hover, .mute-btn:hover {
+    background-color: #00ffff;
+    color: #000;
+    box-shadow: 0 0 20px #00ffff;
+}
+
+/* ====== ANIMAÇÕES ====== */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; }
+}
+@keyframes rotateY {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ====== EFEITO NEON ====== */
+.neon {
+    color: #00ffff;
+    text-shadow:
+        0 0 5px #00ffff,
+        0 0 10px #00ffff,
+        0 0 20px #00b4d8,
+        0 0 40px #00b4d8;
+}
+
+/* ====== EFEITO DIGITAÇÃO ====== */
+.typing {
+    border-right: 2px solid #00ffff;
+    white-space: nowrap;
+    overflow: hidden;
+    animation: blink 0.8s infinite;
+}
+@keyframes blink {
+    0%, 100% { border-color: transparent; }
+    50% { border-color: #00ffff; }
+}
