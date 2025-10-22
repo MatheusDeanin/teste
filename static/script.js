@@ -1,110 +1,109 @@
-// === CONFIGURAÇÃO ===
-// ⚠️ SUBSTITUA PELA SUA CHAVE REAL DA API DO GEMINI! (use só localmente!)
-// ⚠️ NÃO USE ESSA CHAVE EM CÓDIGO PÚBLICO!
-// === CONFIGURAÇÃO ===
-const API_KEY = "AIzaSyA99NwLSLzOxR3MIgLaurnXJIhTH9_VW44"; // <-- TROQUE AQUI
-const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-const speakBtn = document.getElementById("speakBtn");
+// === CONFIGURAÇÃO ===
+const GEMINI_API_KEY = "SUA_CHAVE_AQUI"; // substitua pela sua chave real
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
 const statusEl = document.getElementById("status");
+const conversaEl = document.getElementById("conversa");
+const speakBtn = document.getElementById("speakBtn");
 const muteBtn = document.getElementById("muteBtn");
 let muted = false;
 
+// === HISTÓRICO ===
+let mensagens = JSON.parse(localStorage.getItem("mensagensJarvis")) || [];
+
+// Renderiza mensagens
+function renderizarChat() {
+  conversaEl.innerHTML = "";
+  for (const msg of mensagens) {
+    const div = document.createElement("div");
+    div.className = msg.role === "user" ? "msg user" : "msg jarvis";
+
+    const html = marked.parse(msg.content || "");
+    const safe = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+    div.innerHTML = `<strong>${msg.role === "user" ? "Você" : "Jarvis"}:</strong><div>${safe}</div>`;
+    conversaEl.appendChild(div);
+  }
+  conversaEl.scrollTop = conversaEl.scrollHeight;
+}
+
+renderizarChat();
+
 // === VOZ DO JARVIS ===
 function falar(texto) {
-  if (muted) return;
-  const fala = new SpeechSynthesisUtterance(texto);
-  fala.lang = "pt-BR";
-  fala.pitch = 1.0; // Tom da voz
-  fala.rate = 1.05; // Velocidade da voz
-  fala.volume = 1;
-  
-  // Tenta encontrar uma voz em português para melhor qualidade (opcional)
-  fala.voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("pt"));
-  
-  speechSynthesis.speak(fala);
+  if (muted) return;
+  const fala = new SpeechSynthesisUtterance(texto);
+  fala.lang = "pt-BR";
+  fala.pitch = 1.0;
+  fala.rate = 1.05;
+  fala.voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("pt")) || null;
+  speechSynthesis.speak(fala);
 }
 
 // === RECONHECIMENTO DE VOZ ===
 async function ouvir() {
-  // Cria o objeto de reconhecimento de voz
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "pt-BR";
-  recognition.start();
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "pt-BR";
+  recognition.start();
+  statusEl.textContent = "🎙️ Ouvindo...";
 
-  statusEl.textContent = "🎙️ Ouvindo...";
-
-  return new Promise((resolve) => {
-    // Quando o resultado for recebido (o usuário parou de falar)
-    recognition.onresult = (event) => {
-      const texto = event.results[0][0].transcript;
-      resolve(texto);
-    };
-    // Em caso de erro (microfone não encontrado ou não falou)
-    recognition.onerror = () => resolve(null);
-    
-    // Timeout de 5 segundos, caso o reconhecimento falhe sem erro
-    setTimeout(() => {
-      recognition.stop(); // Parar para evitar consumo de recursos
-      resolve(null);
-    }, 5000);
-  });
+  return new Promise(resolve => {
+    recognition.onresult = (e) => resolve(e.results[0][0].transcript);
+    recognition.onerror = () => resolve(null);
+    setTimeout(() => {
+      recognition.stop();
+      resolve(null);
+    }, 7000);
+  });
 }
 
-// === FALAR COM O GEMINI ===
-async function perguntarJarvis(pergunta) {
-  statusEl.textContent = "🤔 Pensando...";
+// === CONVERSAR COM O GEMINI ===
+async function conversar(pergunta) {
+  mensagens.push({ role: "user", content: pergunta });
+  localStorage.setItem("mensagensJarvis", JSON.stringify(mensagens));
+  renderizarChat();
 
-  try {
-    const resposta = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: pergunta }] }]
-      })
-    });
+  statusEl.textContent = "🤔 Processando...";
 
-    if (!resposta.ok) {
-      throw new Error(`Erro de HTTP: ${resposta.status}`);
-    }
+  try {
+    const contexto = mensagens.map(m => `${m.role}: ${m.content}`).join("\n\n");
+    const result = await model.generateContent(contexto);
+    const resposta = await result.response.text();
 
-    const dados = await resposta.json();
-    // Extrai o texto da resposta do Gemini
-    const texto = dados.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui processar a resposta.";
-    return texto;
+    mensagens.push({ role: "jarvis", content: resposta });
+    localStorage.setItem("mensagensJarvis", JSON.stringify(mensagens));
+    renderizarChat();
 
-  } catch (error) {
-    console.error("Erro ao chamar o Gemini:", error);
-    return "Erro de comunicação com o sistema. Verifique a chave da API.";
-  }
+    statusEl.textContent = "🤖 Jarvis: " + resposta;
+    falar(resposta);
+
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = "❌ Erro de comunicação com o sistema.";
+    mensagens.push({ role: "jarvis", content: "Erro de comunicação com o sistema." });
+    localStorage.setItem("mensagensJarvis", JSON.stringify(mensagens));
+    renderizarChat();
+  }
 }
 
 // === BOTÃO DE FALAR ===
 speakBtn.addEventListener("click", async () => {
-  // 1. Ouve o usuário
-  const pergunta = await ouvir();
-  
-  if (!pergunta) {
-    statusEl.textContent = "❌ Não entendi, tente novamente.";
-    return;
-  }
-
-  statusEl.textContent = "💬 Você: " + pergunta;
-  
-  // 2. Pergunta ao Gemini
-  const resposta = await perguntarJarvis(pergunta);
-
-  // 3. Exibe e fala a resposta
-  statusEl.textContent = "🤖 Jarvis: " + resposta;
-  falar(resposta);
+  const pergunta = await ouvir();
+  if (!pergunta) {
+    statusEl.textContent = "❌ Não entendi, tente novamente.";
+    return;
+  }
+  statusEl.textContent = "💬 Você: " + pergunta;
+  await conversar(pergunta);
 });
 
 // === MUTE ===
 muteBtn.addEventListener("click", () => {
-  muted = !muted;
-  // Altera o texto do botão para o ícone de som ou mudo
-  muteBtn.textContent = muted ? "🔊" : "🔇"; 
+  muted = !muted;
+  muteBtn.textContent = muted ? "🔊" : "🔇";
 });
 
-// Mensagem de boas-vindas ao carregar
-window.onload = () => falar("Olá, estou pronto para te ajudar.");
+// === BOAS-VINDAS ===
+window.onload = () => falar("Olá, sistemas Jarvis prontos para operação.");

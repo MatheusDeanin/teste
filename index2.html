@@ -6,26 +6,31 @@
 <title>J.A.R.V.I.S - Console</title>
 <link rel="stylesheet" href="static/style.css">
 <link rel="icon" type="image/png" href="static/logo.png">
+
+<!-- Bibliotecas para Markdown -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
 </head>
 <body>
-    <button id="voltar">⬅ Voltar</button>
-    <button id="muteBtn" class="mute-btn">🔇</button>
+  <button id="voltar">⬅ Voltar</button>
+  <button id="muteBtn" class="mute-btn">🔇</button>
 
-    <h1 class="neon-title">Sistemas Ativos: <span class="neon">J.A.R.V.I.S</span></h1>
+  <h1 class="neon-title">Sistemas Ativos: <span class="neon">J.A.R.V.I.S</span></h1>
 
-    <div id="jarvis-container">
-        <div id="ironman-3d">
-            <video autoplay loop muted playsinline>
-                <source src="static/ironman.mp4" type="video/mp4">
-            </video>
-        </div>
-
-        <div id="status" class="typing"></div>
-        <div id="conversa"></div>
-
-        <button id="speakBtn" class="btn-neon">Falar com Jarvis</button>
+  <div id="jarvis-container">
+    <div id="ironman-3d">
+      <video autoplay loop muted playsinline>
+        <source src="static/ironman.mp4" type="video/mp4">
+      </video>
     </div>
 
-    <script src="static/script.js"></script>
+    <div id="status" class="typing"></div>
+    <div id="conversa"></div>
+
+    <button id="speakBtn" class="btn-neon">Falar com Jarvis</button>
+  </div>
+
+  <!-- Script principal -->
+  <script type="module" src="static/jarvis.js"></script>
 </body>
 </html>
