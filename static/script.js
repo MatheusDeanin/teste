@@ -107,4 +107,4 @@ muteBtn.addEventListener("click", () => {
 });
 
 // Mensagem de boas-vindas ao carregar
-window.onload = () => falar("Olá, estou pronto para te servir.");
+window.onload = () => falar("Olá, estou pronto para te ajudar.");
