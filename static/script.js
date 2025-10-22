@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
 // === CONFIGURAÇÃO ===
-const GEMINI_API_KEY = "SUA_CHAVE_AQUI"; // substitua pela sua chave real
+const GEMINI_API_KEY = "AIzaSyA99NwLSLzOxR3MIgLaurnXJIhTH9_VW44"; // substitua pela sua chave real
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
